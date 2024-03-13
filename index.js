@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 app.use(express.json());
@@ -26,27 +26,46 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        const usersCollection = client.db('Bistro_Restaurent').collection('Users');
         const menuCollection = client.db('Bistro_Restaurent').collection('Menu');
         const cartCollection = client.db('Bistro_Restaurent').collection('Carts');
 
-        app.get('/menu', async(req, res) =>{
+        // menu collection api
+
+        app.get('/menu', async (req, res) => {
             const result = await menuCollection.find().toArray();
             res.send(result);
         })
 
+        // user collection api
+
+        app.post('/users', async(req, res) =>{
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result); 
+        })
+
         // carts related api
 
-        app.post('/carts', async(req,res) =>{
+        app.post('/carts', async (req, res) => {
             const cartElements = req.body;
             const result = await cartCollection.insertOne(cartElements);
             res.send(result);
         })
 
-        app.get('/carts', async(req,res) =>{
-            const result = await cartCollection.find().toArray();
+        app.get('/carts', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const result = await cartCollection.find(query).toArray();
             res.send(result);
         })
-
+        // carts delete api
+        app.delete('/carts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+            const result = await cartCollection.deleteOne(query);
+            res.send(result);
+        })
         app.get('/', (req, res) => {
             res.send('Hello Bistro Restaurent')
         })
